@@ -1,5 +1,5 @@
-# Use Node 18 (Debian-based) for best compatibility
-FROM node:18-bullseye
+# Force the Docker build to x86_64 architecture
+FROM --platform=linux/amd64 node:18-bullseye
 
 # Install native libraries needed by node-canvas
 RUN apt-get update && apt-get install -y \
@@ -13,16 +13,16 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Copy package manifests first so Docker can cache npm ci
+# Copy package files first
 COPY package*.json ./
 
-# Force canvas to build from source
+# Force canvas to build from source (no prebuilt binaries)
 ENV npm_config_build_from_source=true
 
 # Install dependencies
 RUN npm ci
 
-# Now copy the rest of the app
+# Copy the rest of your code
 COPY . .
 
 EXPOSE 3000
