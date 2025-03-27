@@ -48,25 +48,26 @@ app.get('/chart-svg', (req, res) => {
 
     // Create a virtual DOM for SVG rendering using jsdom
     const dom = new JSDOM(`<!DOCTYPE html><html><body><div id="chart" style="width:${width}px; height:${height}px;"></div></body></html>`, { pretendToBeVisual: true });
-    // Set globals so libraries expecting window/document can work properly
     global.window = dom.window;
     global.document = dom.window.document;
 
     const chartDiv = dom.window.document.getElementById('chart');
-    
-    // Initialize ECharts with the SVG renderer
     const chart = echarts.init(chartDiv, null, { renderer: 'svg', width, height });
     chart.setOption(option);
 
-    // Retrieve the SVG content from the chart container
-    const svg = chart.getDom().innerHTML;
+    // Instead of just innerHTML, get the <svg> node's outerHTML
+    const container = chart.getDom();
+    const svgNode = container.querySelector('svg');
+    const pureSvg = svgNode ? svgNode.outerHTML : '';
+
     res.set('Content-Type', 'image/svg+xml');
-    res.send(svg);
+    res.send(pureSvg);
   } catch (error) {
     console.error('Error generating SVG chart:', error);
     res.status(500).send("Error generating SVG chart");
   }
 });
+
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
