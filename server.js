@@ -30,7 +30,7 @@ app.get('/chart', async (req, res) => {
   }
 });
 
-// SVG endpoint using Puppeteer for a full browser environment
+// SVG endpoint using Puppeteer (for a full browser environment)
 app.get('/chart-svg', async (req, res) => {
   try {
     if (!req.query.config) return res.status(400).send("Missing config parameter");
@@ -39,12 +39,12 @@ app.get('/chart-svg', async (req, res) => {
     const width = parseInt(req.query.width, 10) || 800;
     const height = parseInt(req.query.height, 10) || 600;
 
-    // Launch Puppeteer with no-sandbox options (suitable for many server environments)
+    // Launch Puppeteer with no-sandbox options (suitable for server environments)
     const browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
     const page = await browser.newPage();
     await page.setViewport({ width, height });
 
-    // HTML template: loads ECharts via CDN and renders chart with SVG renderer
+    // HTML template to render the chart using the SVG renderer
     const htmlContent = `
       <!DOCTYPE html>
       <html>

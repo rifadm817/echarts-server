@@ -30,10 +30,10 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Copy package files first to cache dependency installation
+# Copy package files first for caching
 COPY package*.json ./
 
-# Set environment variables to build from source and use legacy peer deps
+# Set environment variables to force build-from-source and use legacy peer deps
 ENV npm_config_build_from_source=true
 ENV npm_config_legacy_peer_deps=true
 
