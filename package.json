@@ -10,7 +10,8 @@
         "canvas": "^2.11.2",
         "cors": "^2.8.5",
         "echarts": "^5.6.0",
-        "express": "^4.21.2"
+        "express": "^4.21.2",
+        "jsdom": "^26.0.0"
     },
     "keywords": [],
     "author": "",

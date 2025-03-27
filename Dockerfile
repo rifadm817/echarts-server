@@ -1,7 +1,7 @@
 # Force x86_64 build environment
 FROM --platform=linux/amd64 node:18-bullseye
 
-# Install native libs needed by node-canvas
+# Install native libraries required by node-canvas
 RUN apt-get update && apt-get install -y \
   libcairo2-dev \
   libjpeg-dev \
@@ -13,17 +13,20 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Copy only package files first
+# Copy package files first for caching
 COPY package*.json ./
 
-# Force node-canvas to compile from source
+# Force node-canvas to compile from source, and allow legacy peer deps for jsdom
 ENV npm_config_build_from_source=true
+ENV npm_config_legacy_peer_deps=true
 
 # Install dependencies
 RUN npm ci
 
-# Copy the rest of your code
+# Copy the rest of the source code
 COPY . .
 
-EXPOSE 3000
+# Expose the port (Railway will supply process.env.PORT; our server defaults to 8080)
+EXPOSE 8080
+
 CMD ["npm", "start"]
