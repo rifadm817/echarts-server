@@ -17,14 +17,14 @@ app.get('/chart', (req, res) => {
     }
     const configString = decodeURIComponent(req.query.config);
     const option = JSON.parse(configString);
-    
+
     const width = parseInt(req.query.width, 10) || 800;
     const height = parseInt(req.query.height, 10) || 600;
-    
+
     const canvas = createCanvas(width, height);
     const chart = echarts.init(canvas, null, { renderer: 'canvas', width, height });
     chart.setOption(option);
-    
+
     const buffer = canvas.toBuffer('image/png');
     res.set('Content-Type', 'image/png');
     res.send(buffer);
@@ -42,18 +42,22 @@ app.get('/chart-svg', (req, res) => {
     }
     const configString = decodeURIComponent(req.query.config);
     const option = JSON.parse(configString);
-    
+
     const width = parseInt(req.query.width, 10) || 800;
     const height = parseInt(req.query.height, 10) || 600;
-    
+
     // Create a virtual DOM for SVG rendering using jsdom
-    const dom = new JSDOM(`<!DOCTYPE html><html><body><div id="chart" style="width:${width}px; height:${height}px;"></div></body></html>`);
+    const dom = new JSDOM(`<!DOCTYPE html><html><body><div id="chart" style="width:${width}px; height:${height}px;"></div></body></html>`, { pretendToBeVisual: true });
+    // Set globals so libraries expecting window/document can work properly
+    global.window = dom.window;
+    global.document = dom.window.document;
+
     const chartDiv = dom.window.document.getElementById('chart');
     
     // Initialize ECharts with the SVG renderer
     const chart = echarts.init(chartDiv, null, { renderer: 'svg', width, height });
     chart.setOption(option);
-    
+
     // Retrieve the SVG content from the chart container
     const svg = chart.getDom().innerHTML;
     res.set('Content-Type', 'image/svg+xml');
