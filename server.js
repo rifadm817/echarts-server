@@ -17,14 +17,14 @@ app.get('/chart', (req, res) => {
     }
     const configString = decodeURIComponent(req.query.config);
     const option = JSON.parse(configString);
-
+    
     const width = parseInt(req.query.width, 10) || 800;
     const height = parseInt(req.query.height, 10) || 600;
-
+    
     const canvas = createCanvas(width, height);
     const chart = echarts.init(canvas, null, { renderer: 'canvas', width, height });
     chart.setOption(option);
-
+    
     const buffer = canvas.toBuffer('image/png');
     res.set('Content-Type', 'image/png');
     res.send(buffer);
@@ -34,7 +34,7 @@ app.get('/chart', (req, res) => {
   }
 });
 
-// SVG endpoint: Renders a chart as an SVG image (scalable and crisp)
+// SVG endpoint: Renders a chart as a pure SVG image (static, no animations)
 app.get('/chart-svg', (req, res) => {
   try {
     if (!req.query.config) {
@@ -42,24 +42,27 @@ app.get('/chart-svg', (req, res) => {
     }
     const configString = decodeURIComponent(req.query.config);
     const option = JSON.parse(configString);
-
+    
     const width = parseInt(req.query.width, 10) || 800;
     const height = parseInt(req.query.height, 10) || 600;
-
+    
     // Create a virtual DOM for SVG rendering using jsdom
     const dom = new JSDOM(`<!DOCTYPE html><html><body><div id="chart" style="width:${width}px; height:${height}px;"></div></body></html>`, { pretendToBeVisual: true });
+    // Set globals so ECharts can find window and document
     global.window = dom.window;
     global.document = dom.window.document;
-
+    
     const chartDiv = dom.window.document.getElementById('chart');
+    
+    // Initialize ECharts with the SVG renderer
     const chart = echarts.init(chartDiv, null, { renderer: 'svg', width, height });
     chart.setOption(option);
-
-    // Instead of just innerHTML, get the <svg> node's outerHTML
+    
+    // Extract the pure <svg> markup from the container
     const container = chart.getDom();
     const svgNode = container.querySelector('svg');
-    const pureSvg = svgNode ? svgNode.outerHTML : '';
-
+    const pureSvg = svgNode ? svgNode.outerHTML : "";
+    
     res.set('Content-Type', 'image/svg+xml');
     res.send(pureSvg);
   } catch (error) {
@@ -67,7 +70,6 @@ app.get('/chart-svg', (req, res) => {
     res.status(500).send("Error generating SVG chart");
   }
 });
-
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
