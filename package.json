@@ -1,20 +1,19 @@
 {
     "name": "echarts-server",
     "version": "1.0.0",
-    "description": "Render Apache ECharts charts as PNG and SVG images",
+    "description": "Render Apache ECharts charts as PNG images",
     "main": "server.js",
     "scripts": {
-      "start": "node server.js"
+        "start": "node server.js"
     },
     "dependencies": {
-      "canvas": "^2.11.2",
-      "cors": "^2.8.5",
-      "echarts": "^5.6.0",
-      "express": "^4.21.2",
-      "jsdom": "^26.0.0",
-      "puppeteer": "^20.8.0"
+        "canvas": "^2.11.2",
+        "cors": "^2.8.5",
+        "echarts": "^5.6.0",
+        "express": "^4.21.2",
+        "jsdom": "^26.0.0"
     },
     "keywords": [],
     "author": "",
     "license": "ISC"
-  }
+}
