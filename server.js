@@ -1,26 +1,30 @@
 const express = require('express');
 const cors = require('cors');
+const { createCanvas } = require('canvas');
 const echarts = require('echarts');
-const puppeteer = require('puppeteer');
+const { JSDOM } = require('jsdom');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
 
 app.use(cors());
 
-// PNG endpoint (for reference)
-app.get('/chart', async (req, res) => {
+// PNG endpoint: Renders a chart as a PNG image
+app.get('/chart', (req, res) => {
   try {
-    if (!req.query.config) return res.status(400).send("Missing config parameter");
+    if (!req.query.config) {
+      return res.status(400).send("Missing config parameter");
+    }
     const configString = decodeURIComponent(req.query.config);
     const option = JSON.parse(configString);
+
     const width = parseInt(req.query.width, 10) || 800;
     const height = parseInt(req.query.height, 10) || 600;
-    
-    const { createCanvas } = require('canvas');
+
     const canvas = createCanvas(width, height);
     const chart = echarts.init(canvas, null, { renderer: 'canvas', width, height });
     chart.setOption(option);
+
     const buffer = canvas.toBuffer('image/png');
     res.set('Content-Type', 'image/png');
     res.send(buffer);
@@ -30,58 +34,40 @@ app.get('/chart', async (req, res) => {
   }
 });
 
-// SVG endpoint using Puppeteer for a full browser environment
-app.get('/chart-svg', async (req, res) => {
+// SVG endpoint: Renders a chart as an SVG image (scalable and crisp)
+app.get('/chart-svg', (req, res) => {
   try {
-    if (!req.query.config) return res.status(400).send("Missing config parameter");
+    if (!req.query.config) {
+      return res.status(400).send("Missing config parameter");
+    }
     const configString = decodeURIComponent(req.query.config);
     const option = JSON.parse(configString);
+
     const width = parseInt(req.query.width, 10) || 800;
     const height = parseInt(req.query.height, 10) || 600;
 
-    // Launch Puppeteer with no-sandbox options (common for server deployments)
-    const browser = await puppeteer.launch({
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
-    const page = await browser.newPage();
-    await page.setViewport({ width, height });
+    // Create a virtual DOM for SVG rendering using jsdom
+    const dom = new JSDOM(`<!DOCTYPE html><html><body><div id="chart" style="width:${width}px; height:${height}px;"></div></body></html>`, { pretendToBeVisual: true });
+    global.window = dom.window;
+    global.document = dom.window.document;
 
-    // HTML template that loads ECharts and renders the chart using the SVG renderer.
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <script src="https://fastly.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
-      </head>
-      <body>
-        <div id="chart" style="width:${width}px; height:${height}px;"></div>
-        <script>
-          var chart = echarts.init(document.getElementById('chart'), null, { renderer: 'svg' });
-          chart.setOption(${JSON.stringify(option)});
-          // Signal that rendering is complete
-          window.chartRendered = true;
-        </script>
-      </body>
-      </html>
-    `;
-    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
-    await page.waitForFunction(() => window.chartRendered === true, { timeout: 3000 });
+    const chartDiv = dom.window.document.getElementById('chart');
+    const chart = echarts.init(chartDiv, null, { renderer: 'svg', width, height });
+    chart.setOption(option);
 
-    // Extract pure SVG markup from the chart container
-    const svg = await page.evaluate(() => {
-      const svgEl = document.getElementById('chart').querySelector('svg');
-      return svgEl ? svgEl.outerHTML : "";
-    });
-    await browser.close();
-    
+    // Instead of just innerHTML, get the <svg> node's outerHTML
+    const container = chart.getDom();
+    const svgNode = container.querySelector('svg');
+    const pureSvg = svgNode ? svgNode.outerHTML : '';
+
     res.set('Content-Type', 'image/svg+xml');
-    res.send(svg);
+    res.send(pureSvg);
   } catch (error) {
-    console.error('Error generating SVG chart with Puppeteer:', error);
+    console.error('Error generating SVG chart:', error);
     res.status(500).send("Error generating SVG chart");
   }
 });
+
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
